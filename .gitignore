@@ -1,6 +1,8 @@
 backend/venv
 backend/src/__pycache__/
 
+venv
+
 # Logs
 logs
 *.log

@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from .database import create_db_and_tables
-from .routes import auth
-from .routes import mood 
+from .routes import auth, mood, bookings, sessions, therapist
 
 app = FastAPI(title="Mental Health Portal API")
 
@@ -22,6 +21,9 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(mood.router)
+app.include_router(bookings.router)
+app.include_router(sessions.router)
+app.include_router(therapist.router)
 
 @app.on_event("startup")
 def on_startup():

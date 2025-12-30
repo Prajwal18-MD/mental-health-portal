@@ -6,6 +6,8 @@ from sqlmodel import Session
 from ..database import get_session
 from ..crud_mood import create_mood, list_moods_for_user, avg_mood_for_user
 from ..routes.auth import get_current_user
+from ..ml.sentiment import analyze_text
+from ..ml.risk import detect_risk
 
 router = APIRouter(prefix="/api/mood", tags=["mood"])
 
@@ -25,8 +27,14 @@ class MoodOut(BaseModel):
 
 @router.post("", response_model=MoodOut)
 def post_mood(payload: MoodIn, current_user = Depends(get_current_user), session: Session = Depends(get_session)):
-    # current_user is SQLModel User instance from auth
-    m = create_mood(session, user_id=current_user.id, text=payload.text, mood_value=payload.mood_value, date=payload.date)
+    # run sentiment analysis (compound)
+    scores = analyze_text(payload.text or "")
+    compound = float(scores.get("compound", 0.0))
+    # run risk detection
+    mood_val = payload.mood_value
+    risk_level, explanation = detect_risk(payload.text or "", compound, mood_val)
+    # create mood entry with sentiment & risk
+    m = create_mood(session, user_id=current_user.id, text=payload.text, mood_value=payload.mood_value, date=payload.date, sentiment=compound, risk=risk_level)
     return m
 
 @router.get("", response_model=list[MoodOut])

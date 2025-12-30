@@ -6,4 +6,8 @@ passlib[bcrypt]
 PyJWT
 python-multipart
 pydantic[email]
+nltk
+
+
+
 

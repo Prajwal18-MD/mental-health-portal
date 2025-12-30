@@ -32,6 +32,14 @@ pip install -r requirements.txt || (
   exit /b 1
 )
 
+REM Download NLTK vader_lexicon
+echo Downloading NLTK vader_lexicon...
+python -c "import nltk; nltk.download('vader_lexicon'); print('vader_lexicon installed')" || (
+  echo ERROR: Failed to download vader_lexicon.
+  pause
+  exit /b 1
+)
+
 echo Starting backend (uvicorn)...
 REM Use python -m uvicorn to ensure venv Python is used
 python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8000

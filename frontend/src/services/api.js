@@ -31,3 +31,30 @@ export async function fetchMe(token) {
   });
   return res.json();
 }
+
+export async function postMood(token, { text, mood_value, date=null }) {
+  const res = await fetch(`${API_BASE}/mood`, {
+    method: "POST",
+    headers: {
+      "Content-Type":"application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ text, mood_value, date })
+  });
+  return res.json();
+}
+
+export async function getMoods(token) {
+  const res = await fetch(`${API_BASE}/mood`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+export async function getAnalytics(token) {
+  const res = await fetch(`${API_BASE}/mood/analytics`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  return res.json();
+}
+

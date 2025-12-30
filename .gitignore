@@ -1,6 +1,10 @@
 backend/venv
 backend/src/__pycache__/
 
+backend/.env
+.env
+
+
 venv
 
 # Logs
@@ -28,6 +32,5 @@ dist-ssr
 *.sln
 *.sw?
 
-backend/.env
 
 

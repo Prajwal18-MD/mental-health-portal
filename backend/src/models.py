@@ -8,7 +8,7 @@ class User(SQLModel, table=True):
     name: str
     email: str
     hashed_password: str
-    role: str = Field(default="patient")  # "patient" or "therapist"
+    role: str = Field(default="patient")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Mood(SQLModel, table=True):
@@ -26,7 +26,7 @@ class Booking(SQLModel, table=True):
     therapist_id: int = Field(foreign_key="user.id")
     datetime: datetime
     notes: Optional[str] = None
-    status: str = Field(default="scheduled")  # scheduled, cancelled, completed
+    status: str = Field(default="scheduled")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Session(SQLModel, table=True):
@@ -37,3 +37,10 @@ class Session(SQLModel, table=True):
     notes: Optional[str] = None
     outcome: Optional[str] = None
     session_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ChatMessage(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    sender: str = Field(default="user")  # "user" or "bot" or "system"
+    text: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)

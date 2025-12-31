@@ -3,6 +3,7 @@ import { health, registerUser, loginUser, fetchMe } from "./services/api";
 import MoodEntry from "./components/MoodEntry";
 import MoodHistory from "./components/MoodHistory";
 import TherapistDashboard from "./pages/TherapistDashboard";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   const [status, setStatus] = useState(null);
@@ -113,6 +114,18 @@ function App() {
                     <div className="text-sm text-gray-600">Avg mood last 30 days: {analytics?.avg_30_days ?? "—"}</div>
                   </div>
                   <MoodHistory token={token} />
+                </div>
+
+                <div className="col-span-2">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <div className="p-3 mb-3 border rounded"> ... analytics ... </div>
+                      <MoodHistory token={token} />
+                    </div>
+                    <div>
+                      <ChatWidget token={token} />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

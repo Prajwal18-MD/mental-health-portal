@@ -123,4 +123,21 @@ export async function getPatientDetail(token, patient_id) {
   return res.json();
 }
 
+// Chat
+export async function sendChat(token, message) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json", "Authorization": `Bearer ${token}`},
+    body: JSON.stringify({ message })
+  });
+  return res.json();
+}
+
+export async function getChatHistory(token) {
+  const res = await fetch(`${API_BASE}/chat/history`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  return res.json();
+}
+
 

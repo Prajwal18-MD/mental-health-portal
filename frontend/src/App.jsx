@@ -4,6 +4,9 @@ import MoodEntry from "./components/MoodEntry";
 import MoodHistory from "./components/MoodHistory";
 import TherapistDashboard from "./pages/TherapistDashboard";
 import ChatWidget from "./components/ChatWidget";
+import Recommendations from "./components/Recommendations";
+import AnalyticsChart from "./components/AnalyticsChart";
+import PrivacyPanel from "./components/PrivacyPanel";
 
 function App() {
   const [status, setStatus] = useState(null);
@@ -77,9 +80,19 @@ function App() {
     setAnalytics(null);
   }
 
+  function handleAccountDeleted() {
+    // called after successful delete
+    localStorage.removeItem("mh_token");
+    setToken("");
+    setMe(null);
+    setAnalytics(null);
+    // reload to reset UI
+    window.location.reload();
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-md p-6 space-y-4">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 space-y-4">
         <h1 className="text-2xl font-semibold text-center">Mental Health Portal</h1>
 
         <div className="mb-4">
@@ -89,48 +102,48 @@ function App() {
 
         {me ? (
           <div>
-            <div className="mb-4 p-3 border rounded">
-              <h2 className="font-semibold">Logged in as {me.name} ({me.role})</h2>
-              <div className="text-sm text-gray-600">{me.email}</div>
-              <button onClick={logout} className="mt-3 px-3 py-1 bg-red-500 text-white rounded">Logout</button>
+            <div className="mb-4 p-3 border rounded flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">Logged in as {me.name} ({me.role})</h2>
+                <div className="text-sm text-gray-600">{me.email}</div>
+              </div>
+              <div>
+                <button onClick={logout} className="px-3 py-1 bg-red-500 text-white rounded">Logout</button>
+              </div>
             </div>
 
             {me.role === "therapist" ? (
               <TherapistDashboard token={token} />
             ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              /* Patient UI: two-column layout */
+              <div className="grid grid-cols-3 gap-4">
+                {/* Left column: Mood entry + recommendations + privacy */}
+                <div className="col-span-1 space-y-4">
                   <MoodEntry token={token} onSaved={()=>{
                     // refresh analytics quickly after saving a mood
                     fetch("http://127.0.0.1:8000/api/mood/analytics", { headers: { "Authorization": `Bearer ${token}` }})
                       .then(r=>r.json()).then(setAnalytics).catch(()=>{});
                   }} />
+                  <Recommendations token={token} />
+                  <PrivacyPanel token={token} onAccountDeleted={handleAccountDeleted} />
                 </div>
 
-                <div>
-                  <div className="p-3 mb-3 border rounded">
-                    <h3 className="font-semibold">Analytics</h3>
-                    <div className="text-sm text-gray-600">Avg mood last 7 days: {analytics?.avg_7_days ?? "—"}</div>
-                    <div className="text-sm text-gray-600">Avg mood last 30 days: {analytics?.avg_30_days ?? "—"}</div>
-                  </div>
-                  <MoodHistory token={token} />
-                </div>
-
-                <div className="col-span-2">
+                {/* Right column (wider): Analytics + mood history + chat */}
+                <div className="col-span-2 space-y-4">
                   <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <div className="p-3 mb-3 border rounded"> ... analytics ... </div>
+                    <AnalyticsChart token={token} range={7} />
+                    <div className="p-3 border rounded">
+                      <h3 className="font-semibold mb-2">Recent moods</h3>
                       <MoodHistory token={token} />
                     </div>
-                    <div>
-                      <ChatWidget token={token} />
-                    </div>
+                    <ChatWidget token={token} />
                   </div>
                 </div>
               </div>
             )}
           </div>
         ) : (
+          /* Unauthenticated: Login / Register UI */
           <div className="grid grid-cols-2 gap-6">
             <div>
               <div className="flex gap-2 mb-2">
@@ -161,7 +174,7 @@ function App() {
             <div>
               <div className="p-4 border rounded mb-3">
                 <h3 className="font-semibold">Quick Test</h3>
-                <p className="text-sm text-gray-600">After logging in as patient, add a mood entry and check history + analytics.</p>
+                <p className="text-sm text-gray-600">After logging in as patient, add a mood entry and check history, analytics & chat.</p>
               </div>
 
               <div className="p-4 border rounded">

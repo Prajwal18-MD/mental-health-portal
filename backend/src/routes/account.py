@@ -1,7 +1,7 @@
 # backend/src/routes/account.py
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
-from sqlmodel import Session, delete
+from sqlmodel import Session, delete # type: ignore
 from ..database import get_session
 from ..routes.auth import get_current_user
 from ..auth_utils import verify_password

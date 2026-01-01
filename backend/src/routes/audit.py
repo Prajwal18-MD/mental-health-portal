@@ -1,6 +1,6 @@
 # backend/src/routes/audit.py
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select # type: ignore
 from ..database import get_session
 from ..deps import require_role
 from ..models import Mood

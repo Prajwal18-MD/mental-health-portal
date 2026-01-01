@@ -1,5 +1,5 @@
 # backend/src/crud_chat.py
-from sqlmodel import select
+from sqlmodel import select # type: ignore
 from .models import ChatMessage
 from datetime import datetime
 

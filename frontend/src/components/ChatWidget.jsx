@@ -46,7 +46,7 @@ export default function ChatWidget({ token }) {
   }
 
   return (
-    <div className="p-3 border rounded flex flex-col h-[420px]">
+    <div className="p-3 border rounded flex flex-col h-105">
       <h4 className="font-semibold mb-2">Chatbot — Basic Support</h4>
       <div className="flex-1 overflow-auto mb-2 p-2 bg-slate-50 rounded">
         {history.length === 0 ? <div className="text-sm text-gray-500">No conversation yet. Say hi 👋</div> :

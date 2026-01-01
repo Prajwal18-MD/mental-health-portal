@@ -1,6 +1,6 @@
 # backend/src/routes/recommendations.py
 from fastapi import APIRouter, Depends
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from ..database import get_session
 from ..routes.auth import get_current_user
 from ..crud_mood import list_moods_for_user, avg_mood_for_user

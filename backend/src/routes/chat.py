@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from ..database import get_session
 from ..routes.auth import get_current_user
 from ..crud_chat import save_message, get_history

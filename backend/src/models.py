@@ -1,6 +1,6 @@
 # backend/src/models.py
 from typing import Optional
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field # type: ignore
 from datetime import datetime
 
 class User(SQLModel, table=True):
@@ -27,7 +27,7 @@ class Booking(SQLModel, table=True):
     datetime: datetime
     notes: Optional[str] = None
     status: str = Field(default="scheduled")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow) # type: ignore
 
 class Session(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

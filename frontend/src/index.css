@@ -1,73 +1,126 @@
 @import "tailwindcss";
 
 :root{
---primary: #4D2B8C;
---primary-light: #85409D;
---accent: #EEA727;
---accent-pale: #FFEF5F;
+  --primary: #4D2B8C;
+  --primary-light: #85409D;
+  --accent: #EEA727;
+  --accent-pale: #FFEF5F;
 }
 
-
+/* Page background */
 body {
-background: #f8fafc; /* subtle slate */
+  background: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-
 
 /* modal backdrop */
 .modal-backdrop {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.45);
-backdrop-filter: blur(6px);
-z-index: 50;
-display: flex;
-align-items: center;
-justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
 
 .modal-container {
-width: 100%;
-max-width: 720px;
-background: white;
-border-radius: 1rem;
-box-shadow: 0 10px 30px rgba(30,30,60,0.08);
-overflow: hidden;
+  width: 100%;
+  max-width: 720px;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(30,30,60,0.08);
+  overflow: hidden;
 }
-
 
 /* gradient header utility */
 .bg-primary-gradient {
-background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
 }
 
-
-/* floating label basic styles (used in Auth later) */
+/* floating label */
 .input-float {
-position: relative;
+  position: relative;
+  margin-top: 0.5rem;
 }
+
 .input-float input,
 .input-float textarea,
 .input-float select {
-width: 100%;
-padding: 0.75rem 0.75rem;
-border: 1px solid #e6e6ea;
-border-radius: 0.5rem;
+  width: 100%;
+  padding: 0.95rem 0.75rem;
+  border: 1px solid #e6e6ea;
+  border-radius: 0.6rem;
+  background: white;
+  outline: none;
+  transition: box-shadow 120ms ease, border-color 120ms ease;
 }
 
+.input-float input:focus,
+.input-float textarea:focus,
+.input-float select:focus {
+  box-shadow: 0 6px 18px rgba(20, 20, 40, 0.06);
+  border-color: rgba(77,43,140,0.85);
+}
+
+.input-float label {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  font-size: 0.9rem;
+  color: #6b7280; /* gray-500 */
+  pointer-events: none;
+  transition: transform 120ms ease, font-size 120ms ease, top 120ms ease;
+  background: white;
+  padding: 0 4px;
+}
+
+/* when input has content or focus, float label up */
+.input-float input:not(:placeholder-shown) + label,
+.input-float input:focus + label,
+.input-float textarea:not(:placeholder-shown) + label,
+.input-float textarea:focus + label {
+  transform: translateY(-12px);
+  top: 6px;
+  font-size: 0.75rem;
+  color: var(--primary);
+}
+
+/* small helper for eye icon */
+.input-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+}
 
 /* CTA button */
 .btn-primary {
-background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
-color: white;
-padding: 0.6rem 1rem;
-border-radius: 0.5rem;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
 }
 
-
 .btn-accent {
-background: var(--accent);
-color: #111;
-padding: 0.5rem 0.9rem;
-border-radius: 0.5rem;
+  background: var(--accent);
+  color: #111;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+}
+
+/* small utilities used inside modal */
+.small-note {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* accessible focus ring */
+:focus {
+  outline: 4px solid rgba(77,43,140,0.12);
+  outline-offset: 2px;
 }

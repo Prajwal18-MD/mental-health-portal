@@ -12,7 +12,7 @@ export default function Landing({ onLogin }){
         <div className="text-center py-10">
           <div className="inline-block p-4 rounded-2xl bg-white shadow-soft">
             <h1 className="text-3xl font-bold text-[#4D2B8C]">Mental Health Portal</h1>
-            <p className="text-sm text-gray-600 mt-3 max-w-2xl mx-auto">A local, privacy-first mental health journaling and therapist-matching portal. Works entirely on your machine for development—no external APIs required.</p>
+            <p className="text-sm text-gray-600 mt-3 max-w-2xl mx-auto">"From your heavy days to your hopeful moments, we are with you. Navigate your feelings and find your path to peace."</p>
             <div className="mt-6 flex items-center justify-center gap-3">
               <Button onClick={onLogin}>Login</Button>
               <Button variant="accent" onClick={onLogin}>Register</Button>

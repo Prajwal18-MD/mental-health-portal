@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { health, registerUser, loginUser, fetchMe } from "./services/api";
+
 import MoodEntry from "./components/MoodEntry";
 import MoodHistory from "./components/MoodHistory";
 import TherapistDashboard from "./pages/TherapistDashboard";
@@ -7,6 +8,11 @@ import ChatWidget from "./components/ChatWidget";
 import Recommendations from "./components/Recommendations";
 import AnalyticsChart from "./components/AnalyticsChart";
 import PrivacyPanel from "./components/PrivacyPanel";
+
+/* Phase-1 UI */
+import Navbar from "./components/ui/Navbar";
+import Landing from "./pages/Landing";
+import Modal from "./components/ui/Modal";
 
 function App() {
   const [status, setStatus] = useState(null);
@@ -16,31 +22,32 @@ function App() {
   const [me, setMe] = useState(null);
   const [analytics, setAnalytics] = useState(null);
 
-  useEffect(() => {
-    // fetch backend health
-    health().then(setStatus).catch(err => console.error(err));
+  /* Phase-1 modal control */
+  const [authOpen, setAuthOpen] = useState(false);
 
-    // if token present, fetch profile & analytics
+  useEffect(() => {
+    health().then(setStatus).catch(() => {});
+
     if (token) {
       fetchMe(token)
         .then(data => {
           if (data && data.email) setMe(data);
           else {
-            setToken("");
             localStorage.removeItem("mh_token");
+            setToken("");
           }
         })
-        .catch(err => {
-          console.error(err);
-          setToken("");
+        .catch(() => {
           localStorage.removeItem("mh_token");
+          setToken("");
         });
 
-      // fetch analytics (safe — ignore failures)
-      fetch("http://127.0.0.1:8000/api/mood/analytics", { headers: { "Authorization": `Bearer ${token}` }})
+      fetch("http://127.0.0.1:8000/api/mood/analytics", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
         .then(r => r.json())
         .then(setAnalytics)
-        .catch(()=>{});
+        .catch(() => {});
     }
   }, [token]);
 
@@ -52,7 +59,7 @@ function App() {
       setMode("login");
       setForm({ name: "", email: "", password: "", role: "patient" });
     } else {
-      alert(res.detail || JSON.stringify(res));
+      alert(res?.detail || JSON.stringify(res));
     }
   }
 
@@ -60,16 +67,12 @@ function App() {
     e.preventDefault();
     const res = await loginUser(form.email, form.password);
     if (res && res.access_token) {
-      const t = res.access_token;
-      localStorage.setItem("mh_token", t);
-      setToken(t);
+      localStorage.setItem("mh_token", res.access_token);
+      setToken(res.access_token);
+      setAuthOpen(false);
       setForm({ name: "", email: "", password: "", role: "patient" });
-      // fetch me & analytics after login
-      fetchMe(t).then(setMe).catch(()=>{});
-      fetch("http://127.0.0.1:8000/api/mood/analytics", { headers: { "Authorization": `Bearer ${t}` }})
-        .then(r=>r.json()).then(setAnalytics).catch(()=>{});
     } else {
-      alert(res.detail || JSON.stringify(res));
+      alert(res?.detail || JSON.stringify(res));
     }
   }
 
@@ -81,113 +84,111 @@ function App() {
   }
 
   function handleAccountDeleted() {
-    // called after successful delete
     localStorage.removeItem("mh_token");
-    setToken("");
-    setMe(null);
-    setAnalytics(null);
-    // reload to reset UI
     window.location.reload();
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-start justify-center p-6">
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 space-y-4">
-        <h1 className="text-2xl font-semibold text-center">Mental Health Portal</h1>
+    <div className="min-h-screen bg-slate-50">
+      {/* ================= LANDING (NOT LOGGED IN) ================= */}
+      {!me && (
+        <>
+          <Navbar onLoginClick={() => setAuthOpen(true)} />
+          <Landing onLogin={() => setAuthOpen(true)} />
 
-        <div className="mb-4">
-          <strong>Backend status:</strong> {status ? status.message : "Connecting..."}
-          <div className="text-xs text-gray-500">{status ? status.time : ""}</div>
-        </div>
+          {/* Auth Modal (Phase-2 will upgrade UI here) */}
+          <Modal
+            open={authOpen}
+            onClose={() => setAuthOpen(false)}
+            title={mode === "login" ? "Login" : "Register"}
+          >
+            <div className="flex gap-2 mb-4">
+              <button
+                className={`px-3 py-1 rounded ${mode === "login" ? "bg-primary text-white" : "bg-slate-100"}`}
+                onClick={() => setMode("login")}
+              >
+                Login
+              </button>
+              <button
+                className={`px-3 py-1 rounded ${mode === "register" ? "bg-primary text-white" : "bg-slate-100"}`}
+                onClick={() => setMode("register")}
+              >
+                Register
+              </button>
+            </div>
 
-        {me ? (
-          <div>
-            <div className="mb-4 p-3 border rounded flex items-center justify-between">
+            {mode === "register" ? (
+              <form onSubmit={onRegister} className="space-y-3">
+                <input required placeholder="Full name" value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full p-2 border rounded" />
+                <input required placeholder="Email" value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  className="w-full p-2 border rounded" />
+                <input required type="password" placeholder="Password" value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  className="w-full p-2 border rounded" />
+                <select value={form.role}
+                  onChange={e => setForm({ ...form, role: e.target.value })}
+                  className="w-full p-2 border rounded">
+                  <option value="patient">Patient</option>
+                  <option value="therapist">Therapist</option>
+                </select>
+                <button className="w-full btn-primary">Register</button>
+              </form>
+            ) : (
+              <form onSubmit={onLogin} className="space-y-3">
+                <input required placeholder="Email" value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  className="w-full p-2 border rounded" />
+                <input required type="password" placeholder="Password" value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  className="w-full p-2 border rounded" />
+                <button className="w-full btn-primary">Login</button>
+              </form>
+            )}
+          </Modal>
+        </>
+      )}
+
+      {/* ================= LOGGED-IN APP ================= */}
+      {me && (
+        <div className="flex items-start justify-center p-6">
+          <div className="w-full max-w-5xl bg-white rounded-xl shadow-md p-6 space-y-4">
+            <h1 className="text-2xl font-semibold text-center">Mental Health Portal</h1>
+
+            <div className="mb-4 text-sm text-gray-600">
+              Backend status: {status?.message || "Connecting..."}
+            </div>
+
+            <div className="mb-4 p-3 border rounded flex justify-between items-center">
               <div>
-                <h2 className="font-semibold">Logged in as {me.name} ({me.role})</h2>
-                <div className="text-sm text-gray-600">{me.email}</div>
+                <strong>{me.name}</strong> ({me.role})
+                <div className="text-xs text-gray-600">{me.email}</div>
               </div>
-              <div>
-                <button onClick={logout} className="px-3 py-1 bg-red-500 text-white rounded">Logout</button>
-              </div>
+              <button onClick={logout} className="px-3 py-1 bg-red-500 text-white rounded">Logout</button>
             </div>
 
             {me.role === "therapist" ? (
               <TherapistDashboard token={token} />
             ) : (
-              /* Patient UI: two-column layout */
               <div className="grid grid-cols-3 gap-4">
-                {/* Left column: Mood entry + recommendations + privacy */}
-                <div className="col-span-1 space-y-4">
-                  <MoodEntry token={token} onSaved={()=>{
-                    // refresh analytics quickly after saving a mood
-                    fetch("http://127.0.0.1:8000/api/mood/analytics", { headers: { "Authorization": `Bearer ${token}` }})
-                      .then(r=>r.json()).then(setAnalytics).catch(()=>{});
-                  }} />
+                <div className="space-y-4">
+                  <MoodEntry token={token} />
                   <Recommendations token={token} />
                   <PrivacyPanel token={token} onAccountDeleted={handleAccountDeleted} />
                 </div>
 
-                {/* Right column (wider): Analytics + mood history + chat */}
                 <div className="col-span-2 space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <AnalyticsChart token={token} range={7} />
-                    <div className="p-3 border rounded">
-                      <h3 className="font-semibold mb-2">Recent moods</h3>
-                      <MoodHistory token={token} />
-                    </div>
-                    <ChatWidget token={token} />
-                  </div>
+                  <AnalyticsChart token={token} range={7} />
+                  <MoodHistory token={token} />
+                  <ChatWidget token={token} />
                 </div>
               </div>
             )}
           </div>
-        ) : (
-          /* Unauthenticated: Login / Register UI */
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <div className="flex gap-2 mb-2">
-                <button className={`px-3 py-1 rounded ${mode==="login" ? "bg-sky-600 text-white":"bg-slate-100"}`} onClick={()=>setMode("login")}>Login</button>
-                <button className={`px-3 py-1 rounded ${mode==="register" ? "bg-sky-600 text-white":"bg-slate-100"}`} onClick={()=>setMode("register")}>Register</button>
-              </div>
-
-              {mode === "register" ? (
-                <form onSubmit={onRegister} className="space-y-3">
-                  <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Full name" className="w-full p-2 border rounded" />
-                  <input required value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email" className="w-full p-2 border rounded" />
-                  <input required value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="Password" className="w-full p-2 border rounded" />
-                  <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} className="w-full p-2 border rounded">
-                    <option value="patient">Patient</option>
-                    <option value="therapist">Therapist</option>
-                  </select>
-                  <button type="submit" className="w-full px-4 py-2 bg-green-600 text-white rounded">Register</button>
-                </form>
-              ) : (
-                <form onSubmit={onLogin} className="space-y-3">
-                  <input required value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email" className="w-full p-2 border rounded" />
-                  <input required value={form.password} onChange={e=>setForm({...form,password:e.target.value})} type="password" placeholder="Password" className="w-full p-2 border rounded" />
-                  <button type="submit" className="w-full px-4 py-2 bg-blue-600 text-white rounded">Login</button>
-                </form>
-              )}
-            </div>
-
-            <div>
-              <div className="p-4 border rounded mb-3">
-                <h3 className="font-semibold">Quick Test</h3>
-                <p className="text-sm text-gray-600">After logging in as patient, add a mood entry and check history, analytics & chat.</p>
-              </div>
-
-              <div className="p-4 border rounded">
-                <h4 className="font-semibold mb-2">Example test accounts</h4>
-                <div className="text-sm">
-                  <div><strong>Patient</strong>: name=Test Patient, email=patient@example.com, pass=Pass1234</div>
-                  <div><strong>Therapist</strong>: name=Dr. Care, email=therapist@example.com, pass=Pass1234</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,122 +1,125 @@
+// src/App.jsx
 import { useEffect, useState } from "react";
 import { health, fetchMe } from "./services/api";
 
-import MoodEntry from "./components/MoodEntry";
-import MoodHistory from "./components/MoodHistory";
-import TherapistDashboard from "./pages/TherapistDashboard";
-import ChatWidget from "./components/ChatWidget";
-import Recommendations from "./components/Recommendations";
-import AnalyticsChart from "./components/AnalyticsChart";
-import PrivacyPanel from "./components/PrivacyPanel";
-
-/* Phase-2 Auth */
+/* UI */
 import Navbar from "./components/ui/Navbar";
+import MoodActionsBar from "./components/MoodActionsBar";
+
+/* Main */
+import MoodEntry from "./components/MoodEntry";
+
+/* Modals & pages */
 import Landing from "./pages/Landing";
 import AuthModal from "./components/AuthModal";
+import MoodHistoryModal from "./components/MoodHistoryModal";
+import AnalyticsModal from "./components/AnalyticsModal";
+import RecommendationsModal from "./components/RecommendationsModal";
+import BookingModal from "./components/BookingModal";
+import ChatModal from "./components/ChatModal";
 
 function App() {
   const [status, setStatus] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("mh_token") || "");
   const [me, setMe] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
 
-  /* auth modal control */
+  /* modal controls */
   const [authOpen, setAuthOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [recoOpen, setRecoOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     health().then(setStatus).catch(() => {});
 
+    // If there's a token, attempt to fetch profile
     if (token) {
       fetchMe(token)
         .then(data => {
-          if (data && data.email) setMe(data);
+          if (data?.email) setMe(data);
           else {
+            // invalid token: clear
             localStorage.removeItem("mh_token");
             setToken("");
+            setMe(null);
           }
         })
         .catch(() => {
           localStorage.removeItem("mh_token");
           setToken("");
+          setMe(null);
         });
-
-      fetch("http://127.0.0.1:8000/api/mood/analytics", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(r => r.json())
-        .then(setAnalytics)
-        .catch(() => {});
+    } else {
+      setMe(null);
     }
   }, [token]);
-
-  function handleAuthSuccess(newToken) {
-    if (!newToken) return;
-    localStorage.setItem("mh_token", newToken);
-    setToken(newToken);
-    setAuthOpen(false);
-  }
 
   function logout() {
     localStorage.removeItem("mh_token");
     setToken("");
     setMe(null);
-    setAnalytics(null);
+    // keep user on landing; close modals
+    setAuthOpen(false);
   }
 
-  function handleAccountDeleted() {
-    localStorage.removeItem("mh_token");
-    window.location.reload();
+  // Called after mood is saved in MoodEntry
+  function handleMoodResult(level) {
+    if (level === "MEDIUM") setChatOpen(true);
+    if (level === "HIGH") setBookingOpen(true);
+  }
+
+  // Called when AuthModal returns a token (successful login/register)
+  function handleAuthSuccess(newToken) {
+    if (!newToken) return;
+    localStorage.setItem("mh_token", newToken);
+    setToken(newToken);
+    setAuthOpen(false);
+    // fetchMe will run automatically due to token change
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* NOT AUTHENTICATED */}
+    <div className="min-h-screen bg-[#F6F7FB]">
+      {/* Navbar always visible; pass me (or null) and login/logout handlers */}
+      <Navbar me={me} onLoginClick={() => setAuthOpen(true)} onLogout={logout} />
+
+      {/* If not logged in: show landing + auth modal */}
       {!me && (
         <>
-          <Navbar onLoginClick={() => setAuthOpen(true)} />
           <Landing onLogin={() => setAuthOpen(true)} />
-
           <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthSuccess={handleAuthSuccess} />
         </>
       )}
 
-      {/* AUTHENTICATED */}
+      {/* When logged in: show Phase-3 UI */}
       {me && (
-        <div className="flex items-start justify-center p-6">
-          <div className="w-full max-w-5xl bg-white rounded-xl shadow-md p-6 space-y-4">
-            <h1 className="text-2xl font-semibold text-center">Mental Health Portal</h1>
+        <>
+          <MoodActionsBar
+            onHistory={() => setHistoryOpen(true)}
+            onAnalytics={() => setAnalyticsOpen(true)}
+            onReco={() => setRecoOpen(true)}
+            onExport={() => setHistoryOpen(true)}
+          />
 
-            <div className="mb-4 text-sm text-gray-600">
-              Backend status: {status?.message || "Connecting..."}
-            </div>
-
-            <div className="mb-4 p-3 border rounded flex justify-between items-center">
-              <div>
-                <strong>{me.name}</strong> ({me.role})
-                <div className="text-xs text-gray-600">{me.email}</div>
-              </div>
-              <button onClick={logout} className="px-3 py-1 bg-red-500 text-white rounded">Logout</button>
-            </div>
-
-            {me.role === "therapist" ? (
-              <TherapistDashboard token={token} />
-            ) : (
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-4">
-                  <MoodEntry token={token} />
-                  <Recommendations token={token} />
-                  <PrivacyPanel token={token} onAccountDeleted={handleAccountDeleted} />
-                </div>
-
-                <div className="col-span-2 space-y-4">
-                  <AnalyticsChart token={token} range={7} />
-                  <MoodHistory token={token} />
-                  <ChatWidget token={token} />
-                </div>
-              </div>
-            )}
+          <div className="max-w-4xl mx-auto mt-10 px-4">
+            <MoodEntry token={token} onResult={handleMoodResult} />
           </div>
-        </div>
+
+          {/* Modals */}
+          <MoodHistoryModal open={historyOpen} onClose={() => setHistoryOpen(false)} token={token} />
+          <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} token={token} />
+          <RecommendationsModal open={recoOpen} onClose={() => setRecoOpen(false)} />
+          <ChatModal
+            open={chatOpen}
+            onClose={() => setChatOpen(false)}
+            onNotSatisfied={() => {
+              setChatOpen(false);
+              setBookingOpen(true);
+            }}
+          />
+          <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} token={token} />
+        </>
       )}
     </div>
   );

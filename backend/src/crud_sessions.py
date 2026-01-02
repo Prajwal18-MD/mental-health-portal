@@ -1,5 +1,5 @@
 # backend/src/crud_sessions.py
-from sqlmodel import select
+from sqlmodel import select # type: ignore
 from .models import Session as SessionModel
 
 def create_session(session, booking_id: int, patient_id: int, therapist_id: int, notes: str = None, outcome: str = None, session_at=None):

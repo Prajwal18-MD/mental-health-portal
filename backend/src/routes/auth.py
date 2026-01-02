@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel, EmailStr
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from typing import Optional
 from ..database import get_session
 from ..crud import get_user_by_email, create_user, get_user_by_id

@@ -1,45 +1,83 @@
+// frontend/src/components/MoodEntry.jsx
 import { useState } from "react";
 
-export default function MoodEntry({ token, onSaved }) {
+export default function MoodEntry({ token, onResult }) {
   const [text, setText] = useState("");
   const [mood, setMood] = useState(5);
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  async function submit(e) {
-    e.preventDefault();
-    setLoading(true);
+  function mapLocalRisk(value) {
+    const v = Number(value);
+    if (v <= 3) return "LOW";
+    if (v <= 6) return "MEDIUM";
+    return "HIGH";
+  }
+
+  async function saveMood() {
+    if (!token) { alert("Please log in"); return; }
+    setBusy(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/mood", {
+      const r = await fetch("http://127.0.0.1:8000/api/mood", {
         method: "POST",
-        headers: { "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ text, mood_value: mood })
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ text, mood_value: Number(mood) })
       });
-      const data = await res.json();
-      if (res.ok) {
-        setText("");
-        setMood(5);
-        onSaved && onSaved(data);
-        alert("Mood saved");
-      } else {
-        alert(data.detail || JSON.stringify(data));
+      const j = await r.json();
+
+      if (!r.ok) {
+        console.error("save mood failed", j);
+        alert(j.detail || "Failed to save mood");
+        return;
       }
+
+      // Prefer server-provided risk if available
+      const serverRisk = (j.risk || j.risk_level || "").toString().toUpperCase();
+      const risk = serverRisk || mapLocalRisk(mood);
+
+      // call parent callback (to open chat/booking)
+      onResult && onResult(risk);
+
+      setText("");
+      setMood(5);
+      alert("Mood saved");
     } catch (err) {
       console.error(err);
-      alert("Network error");
+      alert("Network error while saving mood");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="p-4 border rounded space-y-3">
-      <h3 className="font-semibold">Add mood entry</h3>
-      <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Write a short journal..." className="w-full p-2 border rounded" rows={4}/>
-      <div>
-        <label className="block text-sm mb-1">Mood: {mood}</label>
-        <input type="range" min="1" max="10" value={mood} onChange={e=>setMood(parseInt(e.target.value))} />
+    <div className="bg-white rounded-xl shadow p-6">
+      <h2 className="text-xl font-semibold text-[#4D2B8C] mb-4">How are you feeling today?</h2>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        className="w-full h-40 p-4 border rounded-lg"
+        placeholder="Write freely about your thoughts..."
+      />
+      <div className="mt-6">
+        <label className="font-medium text-[#4D2B8C]">Mood: {mood}/10</label>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          value={mood}
+          onChange={e => setMood(Number(e.target.value))}
+          className="w-full mt-2 accent-[#EEA727]"
+        />
       </div>
-      <button className="px-4 py-2 bg-green-600 text-white rounded" disabled={loading}>{loading? "Saving...":"Save entry"}</button>
-    </form>
+      <button
+        onClick={saveMood}
+        disabled={busy}
+        className="mt-6 px-6 py-2 bg-[#4D2B8C] text-white rounded-lg hover:bg-[#85409D] disabled:opacity-60"
+      >
+        {busy ? "Saving..." : "Save Mood"}
+      </button>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
-from sqlmodel import Session
+from sqlmodel import Session # type: ignore
 from ..database import get_session
 from ..crud_mood import create_mood, list_moods_for_user, avg_mood_for_user
 from ..routes.auth import get_current_user

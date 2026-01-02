@@ -1,6 +1,6 @@
 import os
-from passlib.context import CryptContext
-import jwt
+from passlib.context import CryptContext # type: ignore
+import jwt # type: ignore
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 

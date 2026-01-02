@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from .database import create_db_and_tables
 from .routes import auth, mood, bookings, sessions, therapist, chat, recommendations, analytics, export, account, audit
+from .routes.bookings_auto import router as bookings_auto_router
 
 app = FastAPI(title="Mental Health Portal API")
 
@@ -32,6 +33,7 @@ app.include_router(analytics.router)
 app.include_router(export.router)
 app.include_router(account.router)
 app.include_router(audit.router)
+app.include_router(bookings_auto_router)
 
 @app.on_event("startup")
 def on_startup():

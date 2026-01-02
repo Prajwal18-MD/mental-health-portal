@@ -1,5 +1,5 @@
 # backend/src/crud_bookings.py
-from sqlmodel import select
+from sqlmodel import select # type: ignore
 from .models import Booking
 from datetime import datetime
 

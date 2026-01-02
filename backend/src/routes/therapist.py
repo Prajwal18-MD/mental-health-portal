@@ -1,6 +1,6 @@
 # backend/src/routes/therapist.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select # type: ignore
 from ..database import get_session
 from ..models import User
 from ..routes.auth import get_current_user

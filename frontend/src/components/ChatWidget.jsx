@@ -1,70 +1,74 @@
+// frontend/src/components/ChatWidget.jsx
 import { useEffect, useState, useRef } from "react";
-import { sendChat, getChatHistory } from "../services/api";
 
 export default function ChatWidget({ token }) {
-  const [history, setHistory] = useState([]);
+  const [messages, setMessages] = useState([]); // { role: 'user'|'bot', text, ts }
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const endRef = useRef();
 
-  useEffect(()=> {
-    if(!token) return;
-    getChatHistory(token).then(setHistory).catch(()=>setHistory([]));
-  }, [token]);
-
-  useEffect(()=> {
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [history]);
+  }, [messages]);
 
-  async function send() {
-    if (!text || !token) return;
-    setLoading(true);
+  async function sendMessage(e) {
+    e && e.preventDefault();
+    if (!text.trim()) return;
+    const userMsg = { role: "user", text: text.trim(), ts: new Date().toISOString() };
+    setMessages(m => [...m, userMsg]);
+    setText("");
+    setSending(true);
+
     try {
-      const res = await sendChat(token, text);
-      // append user message locally then fetch history
-      setHistory(prev => [...prev, { sender: "user", text }]);
-      setText("");
-      // Append bot reply from response
-      if (res && res.reply) {
-        setHistory(prev => [...prev, { sender: "bot", text: res.reply }]);
-        if (res.escalate) {
-          alert("This message was flagged as HIGH risk. Please contact a professional or book a session.");
-        }
+      const r = await fetch("http://127.0.0.1:8000/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ text: userMsg.text })
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        console.error("chat api error", j);
+        const errMsg = { role: "bot", text: "Sorry, chat failed. Try again later.", ts: new Date().toISOString() };
+        setMessages(m => [...m, errMsg]);
       } else {
-        // fallback
-        setHistory(prev => [...prev, { sender: "bot", text: "Sorry, I couldn't respond." }]);
+        // expected { reply: "..." } and also returns stored message objects
+        const botReply = j.reply || "I couldn't respond.";
+        setMessages(m => [...m, { role: "bot", text: botReply, ts: new Date().toISOString() }]);
       }
-      // re-sync full history from server (optional)
-      const full = await getChatHistory(token);
-      setHistory(full.map(h => ({ sender: h.sender, text: h.text, id: h.id })));
     } catch (err) {
       console.error(err);
-      alert("Network error");
+      setMessages(m => [...m, { role: "bot", text: "Network error. Try again later.", ts: new Date().toISOString() }]);
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   }
 
   return (
-    <div className="p-3 border rounded flex flex-col h-105">
-      <h4 className="font-semibold mb-2">Chatbot — Basic Support</h4>
-      <div className="flex-1 overflow-auto mb-2 p-2 bg-slate-50 rounded">
-        {history.length === 0 ? <div className="text-sm text-gray-500">No conversation yet. Say hi 👋</div> :
-          history.map((m, i) => (
-            <div key={i} className={`mb-2 ${m.sender === "bot" ? "text-left" : "text-right"}`}>
-              <div className={`inline-block px-3 py-2 rounded ${m.sender === "bot" ? "bg-white border" : "bg-sky-600 text-white"}`}>
-                {m.text}
-              </div>
-            </div>
-          ))
-        }
-        <div ref={endRef} />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-auto p-3 space-y-2 bg-slate-50 rounded">
+        {messages.map((m, i) => (
+          <div key={i} className={`p-2 rounded ${m.role === 'user' ? 'bg-white self-end text-right' : 'bg-[#FFEF5F] self-start'}`}>
+            <div className="text-sm">{m.text}</div>
+            <div className="text-xs text-gray-400 mt-1">{new Date(m.ts).toLocaleTimeString()}</div>
+          </div>
+        ))}
+        <div ref={endRef}></div>
       </div>
 
-      <div className="flex gap-2">
-        <input value={text} onChange={(e)=>setText(e.target.value)} className="flex-1 p-2 border rounded" placeholder="Type your message..." />
-        <button onClick={send} disabled={loading || !text} className="px-3 py-2 bg-sky-600 text-white rounded">{loading ? "Sending..." : "Send"}</button>
-      </div>
+      <form onSubmit={sendMessage} className="flex items-center gap-2 mt-2">
+        <input
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-1 p-2 border rounded"
+        />
+        <button type="submit" disabled={sending || !text.trim()} className="px-3 py-2 bg-[#4D2B8C] text-white rounded">
+          {sending ? "..." : "Send"}
+        </button>
+      </form>
     </div>
   );
 }

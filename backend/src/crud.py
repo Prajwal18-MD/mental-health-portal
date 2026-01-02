@@ -1,4 +1,4 @@
-from sqlmodel import select
+from sqlmodel import select # type: ignore
 from .models import User
 from .database import engine, get_session
 

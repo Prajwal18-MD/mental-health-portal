@@ -1,4 +1,4 @@
-from sqlmodel import select
+from sqlmodel import select # type: ignore
 from .models import Mood
 from .database import get_session
 from datetime import datetime, timedelta

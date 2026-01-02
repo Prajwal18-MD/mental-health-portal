@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, create_engine, Session # type: ignore
 from typing import Generator
 
 DATABASE_URL = "sqlite:///./mh.db"

@@ -1,6 +1,16 @@
 // frontend/src/components/Recommendations.jsx
 import { useEffect, useState } from "react";
 
+function pickRandom(arr, n) {
+  const copy = [...arr];
+  const res = [];
+  while (res.length < n && copy.length > 0) {
+    const idx = Math.floor(Math.random() * copy.length);
+    res.push(copy.splice(idx, 1)[0]);
+  }
+  return res;
+}
+
 export default function Recommendations({ token }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,9 +20,21 @@ export default function Recommendations({ token }) {
     fetch("http://127.0.0.1:8000/api/recommendations", {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     })
-      .then(r=>r.json())
-      .then(j => { setItems(Array.isArray(j) ? j : []); })
-      .catch(err => { console.error(err); setItems([]); })
+      .then(r => r.json())
+      .then(j => {
+        // backend returns { context:..., recommendations: [...] }
+        const arr = Array.isArray(j) ? j : (Array.isArray(j.recommendations) ? j.recommendations : []);
+        if (arr.length === 0) {
+          setItems([]);
+        } else {
+          // pick 3 random each time
+          setItems(pickRandom(arr, 3));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setItems([]);
+      })
       .finally(()=>setLoading(false));
   }, [token]);
 

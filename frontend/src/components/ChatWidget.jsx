@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 
 export default function ChatWidget({ token }) {
-  const [messages, setMessages] = useState([]); // { role: 'user'|'bot', text, ts }
+  const [messages, setMessages] = useState([]); // { role:'user'|'bot', text, ts }
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef();
@@ -26,16 +26,15 @@ export default function ChatWidget({ token }) {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ text: userMsg.text })
+        // send as { message: "..."} for compatibility with backend
+        body: JSON.stringify({ message: userMsg.text })
       });
       const j = await r.json();
       if (!r.ok) {
         console.error("chat api error", j);
-        const errMsg = { role: "bot", text: "Sorry, chat failed. Try again later.", ts: new Date().toISOString() };
-        setMessages(m => [...m, errMsg]);
+        setMessages(m => [...m, { role: "bot", text: "Sorry, chat failed. Try again later.", ts: new Date().toISOString() }]);
       } else {
-        // expected { reply: "..." } and also returns stored message objects
-        const botReply = j.reply || "I couldn't respond.";
+        const botReply = j.reply || j.message || "I couldn't respond.";
         setMessages(m => [...m, { role: "bot", text: botReply, ts: new Date().toISOString() }]);
       }
     } catch (err) {
@@ -50,7 +49,7 @@ export default function ChatWidget({ token }) {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-auto p-3 space-y-2 bg-slate-50 rounded">
         {messages.map((m, i) => (
-          <div key={i} className={`p-2 rounded ${m.role === 'user' ? 'bg-white self-end text-right' : 'bg-[#FFEF5F] self-start'}`}>
+          <div key={i} className={`p-2 rounded max-w-[85%] ${m.role === 'user' ? 'bg-white self-end text-right' : 'bg-[#FFEF5F] self-start'}`}>
             <div className="text-sm">{m.text}</div>
             <div className="text-xs text-gray-400 mt-1">{new Date(m.ts).toLocaleTimeString()}</div>
           </div>

@@ -1,59 +1,52 @@
 # backend/src/routes/chat.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends
 from pydantic import BaseModel
 from typing import Optional
 from sqlmodel import Session # type: ignore
+
 from ..database import get_session
-from ..routes.auth import get_current_user
-from ..crud_chat import save_message, get_history
+from ..crud_chat import create_chat_message
 from ..ml.retrieval import get_best_response
-from ..ml.sentiment import analyze_text
-from ..ml.risk import detect_risk
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 class ChatIn(BaseModel):
-    message: str
+    # accept either "message" or "text" from the frontend
+    message: Optional[str] = None
+    text: Optional[str] = None
     context: Optional[str] = None
 
-class ChatOut(BaseModel):
-    reply: str
-    escalate: bool = False
-    reason: Optional[str] = None
-    response_id: Optional[str] = None
+@router.post("")
+def post_chat(payload: ChatIn, request: Request, session: Session = Depends(get_session)):
+    """
+    Accept chat messages from authenticated or anonymous users.
+    Payload accepts either {"message": "..."} or {"text": "..."} for compatibility.
+    """
+    # pick whichever is present
+    incoming = (payload.message or payload.text or "").strip()
+    if not incoming:
+        # return a 400-like response for empty payload
+        return {"reply": "Please send a non-empty message.", "response_id": "empty_input"}
 
-@router.post("", response_model=ChatOut)
-def post_chat(payload: ChatIn, current_user = Depends(get_current_user), session: Session = Depends(get_session)):
-    # Save user's message
-    user_id = current_user.id
-    save_message(session, user_id=user_id, sender="user", text=payload.message)
+    user_id = None  # anonymous by default; you can populate from token if you wire it later
 
-    # Analyze sentiment & risk
-    scores = analyze_text(payload.message or "")
-    compound = float(scores.get("compound", 0.0))
-    risk_level, explanation = detect_risk(payload.message or "", compound, None)
+    # save user's message (non-fatal)
+    try:
+        create_chat_message(session, user_id=user_id, role="user", text=incoming)
+    except Exception:
+        pass
 
-    # If HIGH risk -> immediate escalation reply
-    if risk_level == "HIGH":
-        reply = ("I'm really sorry you're feeling that way. Your message shows signs of serious distress. "
-                 "I can't provide emergency services, but I recommend contacting a professional right now or calling emergency services. "
-                 "Would you like me to show available therapists and let you book a session immediately?")
-        # Save bot message
-        save_message(session, user_id=user_id, sender="bot", text=reply)
-        return {"reply": reply, "escalate": True, "reason": explanation, "response_id": "escalation_high"}
+    # generate canned reply
+    reply_text, response_id, score = get_best_response(incoming or "")
 
-    # Otherwise use retrieval-based reply
-    bot_text, resp_id, score = get_best_response(payload.message)
-    # If similarity low, use empathetic fallback
-    if score < 0.15:
-        bot_text = "I hear you. Can you say a bit more about how that made you feel? I’m listening."
-        resp_id = "fallback_emp"
-    # Save bot reply
-    save_message(session, user_id=user_id, sender="bot", text=bot_text)
-    return {"reply": bot_text, "escalate": False, "reason": f"compound {compound}", "response_id": resp_id}
+    if score < 0.05:
+        reply_text = "I hear you. Can you say a little more about how that felt?"
+        response_id = "fallback_emp"
 
-@router.get("/history")
-def chat_history(current_user = Depends(get_current_user), session: Session = Depends(get_session)):
-    rows = get_history(session, user_id=current_user.id, limit=500)
-    # convert to simple dicts
-    return [{"id": r.id, "sender": r.sender, "text": r.text, "created_at": r.created_at.isoformat()} for r in rows]
+    # Save bot reply (non-fatal)
+    try:
+        create_chat_message(session, user_id=user_id, role="bot", text=reply_text)
+    except Exception:
+        pass
+
+    return {"reply": reply_text, "response_id": response_id}

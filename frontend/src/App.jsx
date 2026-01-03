@@ -6,10 +6,13 @@ import { health, fetchMe } from "./services/api";
 import Navbar from "./components/ui/Navbar";
 import MoodActionsBar from "./components/MoodActionsBar";
 
-/* Main */
+/* Patient */
 import MoodEntry from "./components/MoodEntry";
 
-/* Modals & pages */
+/* Therapist */
+import TherapistDashboard from "./pages/TherapistDashboard";
+
+/* Pages & Modals */
 import Landing from "./pages/Landing";
 import AuthModal from "./components/AuthModal";
 import MoodHistoryModal from "./components/MoodHistoryModal";
@@ -23,7 +26,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem("mh_token") || "");
   const [me, setMe] = useState(null);
 
-  /* modal controls */
+  /* modals (PATIENT ONLY) */
   const [authOpen, setAuthOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
@@ -34,23 +37,13 @@ function App() {
   useEffect(() => {
     health().then(setStatus).catch(() => {});
 
-    // If there's a token, attempt to fetch profile
     if (token) {
       fetchMe(token)
         .then(data => {
           if (data?.email) setMe(data);
-          else {
-            // invalid token: clear
-            localStorage.removeItem("mh_token");
-            setToken("");
-            setMe(null);
-          }
+          else logout();
         })
-        .catch(() => {
-          localStorage.removeItem("mh_token");
-          setToken("");
-          setMe(null);
-        });
+        .catch(logout);
     } else {
       setMe(null);
     }
@@ -60,40 +53,40 @@ function App() {
     localStorage.removeItem("mh_token");
     setToken("");
     setMe(null);
-    // keep user on landing; close modals
     setAuthOpen(false);
   }
 
-  // Called after mood is saved in MoodEntry
-  function handleMoodResult(level) {
-    if (level === "MEDIUM") setChatOpen(true);
-    if (level === "HIGH") setBookingOpen(true);
-  }
-
-  // Called when AuthModal returns a token (successful login/register)
   function handleAuthSuccess(newToken) {
     if (!newToken) return;
     localStorage.setItem("mh_token", newToken);
     setToken(newToken);
     setAuthOpen(false);
-    // fetchMe will run automatically due to token change
+  }
+
+  function handleMoodResult(level) {
+    if (level === "MEDIUM") setChatOpen(true);
+    if (level === "HIGH") setBookingOpen(true);
   }
 
   return (
     <div className="min-h-screen bg-[#F6F7FB]">
-      {/* Navbar always visible; pass me (or null) and login/logout handlers */}
+      {/* NAVBAR ALWAYS */}
       <Navbar me={me} onLoginClick={() => setAuthOpen(true)} onLogout={logout} />
 
-      {/* If not logged in: show landing + auth modal */}
+      {/* NOT LOGGED IN */}
       {!me && (
         <>
           <Landing onLogin={() => setAuthOpen(true)} />
-          <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} onAuthSuccess={handleAuthSuccess} />
+          <AuthModal
+            open={authOpen}
+            onClose={() => setAuthOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
+          />
         </>
       )}
 
-      {/* When logged in: show Phase-3 UI */}
-      {me && (
+      {/* ===================== PATIENT ===================== */}
+      {me && me.role === "patient" && (
         <>
           <MoodActionsBar
             onHistory={() => setHistoryOpen(true)}
@@ -106,7 +99,7 @@ function App() {
             <MoodEntry token={token} onResult={handleMoodResult} />
           </div>
 
-          {/* Modals */}
+          {/* PATIENT MODALS */}
           <MoodHistoryModal open={historyOpen} onClose={() => setHistoryOpen(false)} token={token} />
           <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} token={token} />
           <RecommendationsModal open={recoOpen} onClose={() => setRecoOpen(false)} />
@@ -120,6 +113,13 @@ function App() {
           />
           <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} token={token} />
         </>
+      )}
+
+      {/* ===================== THERAPIST ===================== */}
+      {me && me.role === "therapist" && (
+        <div className="max-w-6xl mx-auto p-6">
+          <TherapistDashboard token={token} />
+        </div>
       )}
     </div>
   );

@@ -40,8 +40,8 @@ export default function MoodHistoryModal({ token, open, onClose }) {
           {items.map(it => (
             <li key={it.id} className="p-2 border rounded">
               <div className="text-xs text-gray-500">{new Date(it.date || it.created_at || it.createdAt).toLocaleString()}</div>
-              <div className="font-semibold">Mood: {it.mood_value}</div>
               <div className="text-sm mt-1">{it.text || <span className="text-gray-400">— no note —</span>}</div>
+              <div className="text-xs mt-1 text-gray-600">Sentiment: {it.sentiment ? (it.sentiment > 0 ? "Positive" : "Negative") : "—"}</div>
               <div className="text-xs mt-1 text-gray-600">Risk: {it.risk ?? it.risk_level ?? "—"}</div>
             </li>
           ))}

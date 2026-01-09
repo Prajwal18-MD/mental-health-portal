@@ -3,7 +3,7 @@ import React from "react";
 
 function toCSV(rows) {
   if (!rows || !rows.length) return "";
-  const keys = ["id","date","mood_value","risk","text","created_at"];
+  const keys = ["id","date","sentiment","risk","text","created_at"];
   const header = keys.join(",") + "\n";
   const body = rows.map(r => keys.map(k => `"${String(r[k] ?? "").replace(/"/g,'""')}"`).join(",")).join("\n");
   return header + body;

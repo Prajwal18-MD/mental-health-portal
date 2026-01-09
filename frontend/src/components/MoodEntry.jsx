@@ -3,19 +3,15 @@ import { useState } from "react";
 
 export default function MoodEntry({ token, onResult }) {
   const [text, setText] = useState("");
-  const [mood, setMood] = useState(5);
   const [busy, setBusy] = useState(false);
-
-  function mapLocalRisk(value) {
-    const v = Number(value);
-    if (v <= 3) return "LOW";
-    if (v <= 6) return "MEDIUM";
-    return "HIGH";
-  }
+  const [error, setError] = useState("");
 
   async function saveMood() {
     if (!token) { alert("Please log in"); return; }
+    if (!text.trim()) { alert("Please write something about how you're feeling"); return; }
+    
     setBusy(true);
+    setError("");
     try {
       const r = await fetch("http://127.0.0.1:8000/api/mood", {
         method: "POST",
@@ -23,29 +19,27 @@ export default function MoodEntry({ token, onResult }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ text, mood_value: Number(mood) })
+        body: JSON.stringify({ text })
       });
       const j = await r.json();
 
       if (!r.ok) {
         console.error("save mood failed", j);
-        alert(j.detail || "Failed to save mood");
+        setError(j.detail || "Failed to save mood");
         return;
       }
 
-      // Prefer server-provided risk if available
-      const serverRisk = (j.risk || j.risk_level || "").toString().toUpperCase();
-      const risk = serverRisk || mapLocalRisk(mood);
+      // Get server-provided risk level
+      const serverRisk = (j.risk || "").toString().toUpperCase();
 
       // call parent callback (to open chat/booking)
-      onResult && onResult(risk);
+      onResult && onResult(serverRisk);
 
       setText("");
-      setMood(5);
-      alert("Mood saved");
+      alert("Mood entry recorded successfully!");
     } catch (err) {
       console.error(err);
-      alert("Network error while saving mood");
+      setError("Network error while saving mood");
     } finally {
       setBusy(false);
     }
@@ -58,25 +52,16 @@ export default function MoodEntry({ token, onResult }) {
         value={text}
         onChange={e => setText(e.target.value)}
         className="w-full h-40 p-4 border rounded-lg"
-        placeholder="Write freely about your thoughts..."
+        placeholder="Write freely about your thoughts and feelings..."
+        disabled={busy}
       />
-      <div className="mt-6">
-        <label className="font-medium text-[#4D2B8C]">Mood: {mood}/10</label>
-        <input
-          type="range"
-          min="1"
-          max="10"
-          value={mood}
-          onChange={e => setMood(Number(e.target.value))}
-          className="w-full mt-2 accent-[#EEA727]"
-        />
-      </div>
+      {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
       <button
         onClick={saveMood}
-        disabled={busy}
+        disabled={busy || !text.trim()}
         className="mt-6 px-6 py-2 bg-[#4D2B8C] text-white rounded-lg hover:bg-[#85409D] disabled:opacity-60"
       >
-        {busy ? "Saving..." : "Save Mood"}
+        {busy ? "Saving..." : "Save Mood Entry"}
       </button>
     </div>
   );

@@ -24,7 +24,7 @@ RECOMMENDATION_POOL = [
 def generate_recommendations(context: Dict) -> List[Dict]:
     """
     context: {
-      latest_mood_value: int or None,
+      latest_mood_sentiment: float or None (BERT sentiment score -1 to 1),
       latest_risk: "LOW"/"MEDIUM"/"HIGH"/None,
       avg_7_days: float or None,
       avg_30_days: float or None
@@ -32,7 +32,7 @@ def generate_recommendations(context: Dict) -> List[Dict]:
 
     Return a list of recommendation dicts prioritized for the user.
     """
-    latest_mood = context.get("latest_mood_value")
+    latest_sentiment = context.get("latest_mood_sentiment")
     latest_risk = (context.get("latest_risk") or "").upper() if context.get("latest_risk") else None
     avg7 = context.get("avg_7_days")
     avg30 = context.get("avg_30_days")
@@ -40,15 +40,15 @@ def generate_recommendations(context: Dict) -> List[Dict]:
     recs = []
 
     # If recent HIGH risk -> immediate safety + booking items first
-    if latest_risk == "HIGH" or (isinstance(latest_mood, (int,float)) and latest_mood >= 8):
+    if latest_risk == "HIGH" or (isinstance(latest_sentiment, (int,float)) and latest_sentiment <= -0.6):
         # immediate coping + professional help
         recs.extend([r for r in RECOMMENDATION_POOL if r["id"] in ("breathing","seek_professional","grounding","short_walk")])
     else:
-        # if average last 7 days low -> recommend routine, sleep, grounding
-        if avg7 is not None and avg7 <= 3.5:
+        # if average last 7 days very negative -> recommend routine, sleep, grounding
+        if avg7 is not None and avg7 <= -0.5:
             recs.extend([r for r in RECOMMENDATION_POOL if r["id"] in ("daily_routine","sleep_hygiene","tiny_task","connect")])
-        # if moderate difficulty -> coping skills + short activities
-        if avg7 is not None and 3.5 < avg7 <= 6:
+        # if moderate negative sentiment -> coping skills + short activities
+        if avg7 is not None and -0.5 < avg7 <= 0:
             recs.extend([r for r in RECOMMENDATION_POOL if r["id"] in ("grounding","breathing","short_walk","journaling")])
 
     # If not already included, add some general helpful items

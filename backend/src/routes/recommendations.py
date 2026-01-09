@@ -16,7 +16,7 @@ def get_recommendations(request: Request, session: Session = Depends(get_session
     """
     # Default (anonymous) context
     context: Dict = {
-        "latest_mood_value": None,
+        "latest_mood_sentiment": None,
         "latest_risk": None,
         "avg_7_days": None,
         "avg_30_days": None,

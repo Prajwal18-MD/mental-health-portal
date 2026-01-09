@@ -19,7 +19,7 @@ def detect_risk(text: str, compound_score: float, mood_value: int = None) -> Tup
     Explanation is a short string describing why it was classified.
     Heuristic:
       - HIGH if any HIGH_KEYWORDS present OR compound_score <= -0.6
-      - MEDIUM if any MEDIUM_KEYWORDS present OR compound_score <= -0.3 OR mood_value <= 3
+      - MEDIUM if any MEDIUM_KEYWORDS present OR compound_score <= -0.3
       - LOW otherwise
     """
     if text:
@@ -36,12 +36,5 @@ def detect_risk(text: str, compound_score: float, mood_value: int = None) -> Tup
             return "HIGH", f"compound {compound_score}"
         if compound_score <= -0.3:
             return "MEDIUM", f"compound {compound_score}"
-
-    if mood_value is not None:
-        try:
-            if int(mood_value) <= 3:
-                return "MEDIUM", f"mood_value {mood_value}"
-        except Exception:
-            pass
 
     return "LOW", f"compound {compound_score}"

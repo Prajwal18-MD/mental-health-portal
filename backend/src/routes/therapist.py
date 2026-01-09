@@ -26,7 +26,7 @@ def list_patients(current_user = Depends(require_role("therapist")), session: Se
             "id": p.id,
             "name": p.name,
             "email": p.email,
-            "latest_mood_value": latest.mood_value if latest else None,
+            "latest_mood_sentiment": latest.sentiment if latest else None,
             "latest_mood_risk": latest.risk if latest else None,
             "avg_7_days": avg7,
             "avg_30_days": avg30

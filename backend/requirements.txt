@@ -6,7 +6,9 @@ passlib[bcrypt]
 PyJWT
 python-multipart
 pydantic[email]
-nltk
+transformers
+torch
+sentencepiece
 scikit-learn
 
 

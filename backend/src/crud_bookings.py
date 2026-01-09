@@ -36,3 +36,19 @@ def update_booking(session, booking_id: int, **patch):
     session.commit()
     session.refresh(b)
     return b
+
+def complete_booking(session, booking_id: int, session_notes: str = None, session_outcome: str = None):
+    """
+    Mark a booking as completed and record session details.
+    """
+    b = get_booking(session, booking_id)
+    if not b:
+        return None
+    b.status = "completed"
+    b.session_notes = session_notes
+    b.session_outcome = session_outcome
+    b.completed_at = datetime.utcnow()
+    session.add(b)
+    session.commit()
+    session.refresh(b)
+    return b

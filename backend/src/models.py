@@ -15,7 +15,6 @@ class Mood(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     text: Optional[str] = None
-    mood_value: int = Field(default=5, ge=1, le=10)
     date: datetime = Field(default_factory=datetime.utcnow)
     sentiment: Optional[float] = None
     risk: Optional[str] = None
@@ -27,6 +26,9 @@ class Booking(SQLModel, table=True):
     datetime: datetime
     notes: Optional[str] = None
     status: str = Field(default="scheduled")
+    session_notes: Optional[str] = None
+    session_outcome: Optional[str] = None
+    completed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow) # type: ignore
 
 class Session(SQLModel, table=True):

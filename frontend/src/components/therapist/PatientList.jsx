@@ -15,8 +15,9 @@ export default function PatientList({ patients = [], loading=false, onSelect }) 
           </div>
           <div className="text-right">
             <div className="text-sm font-semibold">
-              {p.latest_mood_value ? `${p.latest_mood_value}/10` : "—"}
+              {p.latest_mood_sentiment ? (p.latest_mood_sentiment > 0 ? "Positive" : "Negative") : "—"}
             </div>
+            <div className="text-xs text-gray-600">Risk: {p.latest_mood_risk || "—"}</div>
             <button onClick={()=>onSelect && onSelect(p)} className="mt-2 px-3 py-1 bg-[#EEA727] text-[#4D2B8C] rounded text-sm">Open</button>
           </div>
         </div>

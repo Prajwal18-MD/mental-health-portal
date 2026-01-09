@@ -5,7 +5,7 @@ from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Session # type: ignore
 from ..database import get_session
-from ..crud_bookings import create_booking, list_bookings, get_booking, update_booking
+from ..crud_bookings import create_booking, list_bookings, get_booking, update_booking, complete_booking
 from ..routes.auth import get_current_user
 from ..models import Booking  # optional, for typing/clarity
 
@@ -98,3 +98,26 @@ def patch_booking(booking_id: int, payload: BookingPatch, current_user = Depends
         return updated.dict()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not update booking: {str(e)}")
+
+class SessionCompletionIn(BaseModel):
+    session_notes: Optional[str] = None
+    session_outcome: Optional[str] = None
+
+@router.post("/{booking_id}/complete", response_model=dict)
+def complete_session(booking_id: int, payload: SessionCompletionIn, current_user = Depends(get_current_user), session: Session = Depends(get_session)):
+    """
+    Mark a booking as completed and record session details.
+    Only the therapist who owns the booking may complete it.
+    """
+    b = get_booking(session, booking_id)
+    if not b:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    if current_user.role != "therapist" or b.therapist_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owning therapist may complete this booking")
+
+    try:
+        completed = complete_booking(session, booking_id, payload.session_notes, payload.session_outcome)
+        return completed.dict()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not complete booking: {str(e)}")

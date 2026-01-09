@@ -32,14 +32,14 @@ export async function fetchMe(token) {
   return res.json();
 }
 
-export async function postMood(token, { text, mood_value, date=null }) {
+export async function postMood(token, { text, date=null }) {
   const res = await fetch(`${API_BASE}/mood`, {
     method: "POST",
     headers: {
       "Content-Type":"application/json",
       "Authorization": `Bearer ${token}`
     },
-    body: JSON.stringify({ text, mood_value, date })
+    body: JSON.stringify({ text, date })
   });
   return res.json();
 }

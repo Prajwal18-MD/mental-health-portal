@@ -17,11 +17,11 @@ def chart_data(days: int = Query(7, ge=1, le=365, alias="range"), current_user =
     end = datetime.utcnow()
     start = end - timedelta(days=days-1)
 
-    # initialize buckets (avg default 0.0)
+    # initialize buckets (sentiment default 0.0)
     day_map = {}
     for i in range(days):
         d = (start + timedelta(days=i)).date()
-        day_map[d.isoformat()] = {"date": d.isoformat(), "sum": 0.0, "count": 0, "avg": 0.0, "high": 0, "medium": 0, "low": 0}
+        day_map[d.isoformat()] = {"date": d.isoformat(), "sum": 0.0, "count": 0, "avg_sentiment": 0.0, "high": 0, "medium": 0, "low": 0}
 
     statement = select(Mood).where(Mood.user_id == current_user.id).where(Mood.date >= start).where(Mood.date <= end)
     rows = session.exec(statement).all()
@@ -30,7 +30,7 @@ def chart_data(days: int = Query(7, ge=1, le=365, alias="range"), current_user =
         if d not in day_map:
             # ignore out-of-range entries
             continue
-        day_map[d]["sum"] += float(r.mood_value)
+        day_map[d]["sum"] += float(r.sentiment or 0.0)
         day_map[d]["count"] += 1
         if r.risk == "HIGH":
             day_map[d]["high"] += 1
@@ -42,6 +42,6 @@ def chart_data(days: int = Query(7, ge=1, le=365, alias="range"), current_user =
     out = []
     for key in sorted(day_map.keys()):
         rec = day_map[key]
-        rec["avg"] = round(rec["sum"]/rec["count"], 2) if rec["count"] > 0 else 0.0
+        rec["avg_sentiment"] = round(rec["sum"]/rec["count"], 2) if rec["count"] > 0 else 0.0
         out.append(rec)
     return out

@@ -13,14 +13,12 @@ router = APIRouter(prefix="/api/mood", tags=["mood"])
 
 class MoodIn(BaseModel):
     text: Optional[str] = None
-    mood_value: int = Field(..., ge=1, le=10)
     date: Optional[datetime] = None
 
 class MoodOut(BaseModel):
     id: int
     user_id: int
     text: Optional[str]
-    mood_value: int
     date: datetime
     sentiment: Optional[float]
     risk: Optional[str]
@@ -30,11 +28,10 @@ def post_mood(payload: MoodIn, current_user = Depends(get_current_user), session
     # run sentiment analysis (compound)
     scores = analyze_text(payload.text or "")
     compound = float(scores.get("compound", 0.0))
-    # run risk detection
-    mood_val = payload.mood_value
-    risk_level, explanation = detect_risk(payload.text or "", compound, mood_val)
+    # run risk detection (no mood_value parameter)
+    risk_level, explanation = detect_risk(payload.text or "", compound)
     # create mood entry with sentiment & risk
-    m = create_mood(session, user_id=current_user.id, text=payload.text, mood_value=payload.mood_value, date=payload.date, sentiment=compound, risk=risk_level)
+    m = create_mood(session, user_id=current_user.id, text=payload.text, date=payload.date, sentiment=compound, risk=risk_level)
     return m
 
 @router.get("", response_model=list[MoodOut])

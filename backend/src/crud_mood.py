@@ -7,26 +7,9 @@ from fastapi import HTTPException, status
 
 def create_mood(session, user_id: int, text: str, date: datetime = None, sentiment: float = None, risk: str = None):
     """
-    Create a mood entry. Enforces 1 mood per day per user.
-    Raises HTTPException if user already has a mood entry today.
+    Create a mood entry. Multiple entries per day are allowed.
     """
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = today_start + timedelta(days=1)
-    
-    # Check if user already has a mood entry today
-    statement = select(Mood).where(
-        Mood.user_id == user_id,
-        Mood.date >= today_start,
-        Mood.date < today_end
-    )
-    existing = session.exec(statement).first()
-    
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You can only submit one mood entry per day. Please try again tomorrow."
-        )
-    
+        
     m = Mood(user_id=user_id, text=text, date=(date or datetime.utcnow()), sentiment=sentiment, risk=risk)
     session.add(m)
     session.commit()

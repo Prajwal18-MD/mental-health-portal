@@ -35,7 +35,7 @@ function App() {
   const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
-    health().then(setStatus).catch(() => {});
+    health().then(setStatus).catch(() => { });
 
     if (token) {
       fetchMe(token)
@@ -69,37 +69,50 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
-      {/* NAVBAR ALWAYS */}
-      <Navbar me={me} onLoginClick={() => setAuthOpen(true)} onLogout={logout} />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Navbar */}
+      <Navbar
+        me={me}
+        onLoginClick={() => setAuthOpen(true)}
+        onLogout={logout}
+      />
 
-      {/* NOT LOGGED IN */}
-      {!me && (
-        <>
-          <Landing onLogin={() => setAuthOpen(true)} />
-          <AuthModal
-            open={authOpen}
-            onClose={() => setAuthOpen(false)}
-            onAuthSuccess={handleAuthSuccess}
-          />
-        </>
-      )}
+      {/* Main Content Area */}
+      <main className="flex-1 w-full">
+        {/* NOT LOGGED IN */}
+        {!me && <Landing onLogin={() => setAuthOpen(true)} />}
 
-      {/* ===================== PATIENT ===================== */}
+        {/* PATIENT VIEW */}
+        {me && me.role === "patient" && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <MoodEntry token={token} onResult={handleMoodResult} />
+            <MoodActionsBar
+              onHistory={() => setHistoryOpen(true)}
+              onAnalytics={() => setAnalyticsOpen(true)}
+              onReco={() => setRecoOpen(true)}
+              onExport={() => setHistoryOpen(true)}
+            />
+          </div>
+        )}
+
+        {/* THERAPIST VIEW */}
+        {me && me.role === "therapist" && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <TherapistDashboard token={token} />
+          </div>
+        )}
+      </main>
+
+      {/* Auth Modal - Always available */}
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* PATIENT MODALS */}
       {me && me.role === "patient" && (
         <>
-          <MoodActionsBar
-            onHistory={() => setHistoryOpen(true)}
-            onAnalytics={() => setAnalyticsOpen(true)}
-            onReco={() => setRecoOpen(true)}
-            onExport={() => setHistoryOpen(true)}
-          />
-
-          <div className="max-w-4xl mx-auto mt-10 px-4">
-            <MoodEntry token={token} onResult={handleMoodResult} />
-          </div>
-
-          {/* PATIENT MODALS */}
           <MoodHistoryModal open={historyOpen} onClose={() => setHistoryOpen(false)} token={token} />
           <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} token={token} />
           <RecommendationsModal open={recoOpen} onClose={() => setRecoOpen(false)} />
@@ -113,13 +126,6 @@ function App() {
           />
           <BookingModal open={bookingOpen} onClose={() => setBookingOpen(false)} token={token} />
         </>
-      )}
-
-      {/* ===================== THERAPIST ===================== */}
-      {me && me.role === "therapist" && (
-        <div className="max-w-6xl mx-auto p-6">
-          <TherapistDashboard token={token} />
-        </div>
       )}
     </div>
   );

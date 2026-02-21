@@ -9,7 +9,7 @@ HIGH_KEYWORDS: List[str] = [
 
 MEDIUM_KEYWORDS: List[str] = [
     "worthless", "hopeless", "no future", "give up", "cant cope", "can't cope",
-    , "sad",  "unhappy" , "panic attack", "anxious", "anxiety"
+    "sad", "unhappy", "panic attack", "anxious", "anxiety"
 ]
 
 def detect_risk(text: str, compound_score: float, mood_value: int = None) -> Tuple[str, str]:

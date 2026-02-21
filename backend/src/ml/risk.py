@@ -4,12 +4,12 @@ from typing import Tuple, List
 # Keywords that indicate high immediate risk (lowercase)
 HIGH_KEYWORDS: List[str] = [
     "suicide", "kill myself", "end my life", "i want to die", "i'll kill myself",
-    "i cant go on", "hurt myself", "want to die", "end it all", "kill me"
+    "i cant go on", "hurt myself", "want to die", "end it all", "kill me", "depressed", "depression"
 ]
 
 MEDIUM_KEYWORDS: List[str] = [
     "worthless", "hopeless", "no future", "give up", "cant cope", "can't cope",
-    "depressed", "depression", "panic attack", "anxious", "anxiety"
+    , "sad",  "unhappy" , "panic attack", "anxious", "anxiety"
 ]
 
 def detect_risk(text: str, compound_score: float, mood_value: int = None) -> Tuple[str, str]:
